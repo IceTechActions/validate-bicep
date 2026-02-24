@@ -1,0 +1,26 @@
+name: Validate Bicep Templates
+description: Build all Bicep templates in the repository to catch syntax errors
+
+runs:
+  using: composite
+  steps:
+    - name: Validate main.bicep
+      shell: bash
+      run: |
+        az bicep build --file main.bicep --stdout > /dev/null
+        echo "✓ main.bicep"
+
+    - name: Validate modules
+      shell: bash
+      run: |
+        failed=0
+        for module in modules/*.bicep; do
+          MODULE_NAME=$(basename "$module")
+          if az bicep build --file "$module" --stdout > /dev/null 2>&1; then
+            echo "✓ $MODULE_NAME"
+          else
+            echo "✗ $MODULE_NAME"
+            failed=1
+          fi
+        done
+        exit $failed
