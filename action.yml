@@ -25,8 +25,14 @@ runs:
     - name: Validate modules
       shell: bash
       run: |
+        shopt -s nullglob
+        modules=("${{ inputs.bicep_root }}"/modules/*.bicep)
+        if [ ${#modules[@]} -eq 0 ]; then
+          echo "No modules found — skipping"
+          exit 0
+        fi
         failed=0
-        for module in "${{ inputs.bicep_root }}"/modules/*.bicep; do
+        for module in "${modules[@]}"; do
           MODULE_NAME=$(basename "$module")
           if az bicep build --file "$module" --stdout > /dev/null 2>&1; then
             echo "✓ $MODULE_NAME"
