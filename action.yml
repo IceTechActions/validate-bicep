@@ -1,5 +1,17 @@
 name: Validate Bicep Templates
-description: Build all Bicep templates in the repository to catch syntax errors
+description: >
+  Build all Bicep templates to catch syntax errors.
+  By default validates main.bicep and all files in modules/ within the
+  calling repo's workspace. Override bicep_root to point at a different
+  directory (e.g. '.' when running inside an action repo's own CI).
+
+inputs:
+  bicep_root:
+    description: >
+      Root directory containing main.bicep and a modules/ subdirectory.
+      Defaults to the calling workflow's workspace.
+    required: false
+    default: ${{ github.workspace }}
 
 runs:
   using: composite
@@ -7,14 +19,14 @@ runs:
     - name: Validate main.bicep
       shell: bash
       run: |
-        az bicep build --file main.bicep --stdout > /dev/null
+        az bicep build --file "${{ inputs.bicep_root }}/main.bicep" --stdout > /dev/null
         echo "✓ main.bicep"
 
     - name: Validate modules
       shell: bash
       run: |
         failed=0
-        for module in modules/*.bicep; do
+        for module in "${{ inputs.bicep_root }}"/modules/*.bicep; do
           MODULE_NAME=$(basename "$module")
           if az bicep build --file "$module" --stdout > /dev/null 2>&1; then
             echo "✓ $MODULE_NAME"
